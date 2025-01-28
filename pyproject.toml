@@ -1,0 +1,35 @@
+[project]
+name = "api-bench"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Sujay Jayakar", email = "sujayakar@convex.dev"},
+]
+dependencies = [
+    "ruff>=0.9.3",
+    "braintrust>=0.0.183",
+    "autoevals>=0.0.118",
+    "openai>=1.60.2",
+    "python-dotenv>=1.0.1",
+    "typing-extensions>=4.9.0",
+    "markdown-it-py>=3.0.0",
+    "portpicker>=1.6.0",
+    "requests>=2.32.3"
+]
+requires-python = "==3.9.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.9
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

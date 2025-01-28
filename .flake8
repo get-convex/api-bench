@@ -1,0 +1,17 @@
+[flake8]
+# Ignore line length violations
+ignore = E501
+
+# Other common settings
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg-info
+
+# Show the source code generating each error
+show-source = true
+
+# Count the number of occurrences of each error
+statistics = true
