@@ -15,19 +15,15 @@ for each necessary file. Include the contents of the file in a code block.
 For example, correct output looks like:
 
 # Files
-## package.json
-```json
-{
-  "name": "my-app",
-  "version": "1.0.0",
-  "dependencies": {
-    "react": "^18.3.1"
-  }
-}
+## exampleFile.txt
 ```
-## convex/schema.ts
-```ts
-...
+Hello world!
+```
+## static/anotherFile.c
+```
+int main() {
+  return 0;
+}
 ```
 """
 
@@ -44,9 +40,9 @@ class O1Model:
 
     def execute(self, backend: Backend, task: Task) -> ModelResponse:
         prompt = "# Task\n"
-        prompt += task.prelude
-        prompt += f"\n{backend.api_prompt(task.api_description)}\n"
-        prompt += task.postlude
+        prompt += task.prelude()
+        prompt += f"\n{backend.api_prompt(task.api_description())}\n"
+        prompt += task.postlude()
         prompt += f"\n{backend.description()}\n"
         prompt += FORMAT_PROMPT
 

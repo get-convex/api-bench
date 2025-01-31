@@ -14,7 +14,10 @@ dependencies = [
     "typing-extensions>=4.9.0",
     "markdown-it-py>=3.0.0",
     "portpicker>=1.6.0",
-    "requests>=2.32.3"
+    "requests>=2.32.3",
+    "convex>=0.7.0",
+    "modal>=0.72.57",
+    "fastapi[standard]>=0.115.7",
 ]
 requires-python = "==3.9.*"
 readme = "README.md"

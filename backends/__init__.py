@@ -14,11 +14,18 @@ class Backend(ABC):
     def description(cls) -> str:
         pass
 
+    @abstractmethod
     def start(self):
         pass
 
+    @abstractmethod
     def deploy(self):
         pass
 
+    @abstractmethod
+    def call_api(self, task, name: str, input):
+        pass
+
+    @abstractmethod
     def stop(self):
         pass

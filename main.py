@@ -1,21 +1,15 @@
-from dotenv.main import load_dotenv
+from typing import Union
 
-from backends.convex import ConvexBackend
-from evaluation.tasks.kv_store import kv_store_task
-from graders.filesystem import write_files
-from models.openai.o1 import O1Model
+from fastapi import FastAPI
 
-load_dotenv()
+app = FastAPI()
 
-model = O1Model()
-response = model.execute(ConvexBackend, kv_store_task)
 
-temp_dir = write_files(response)
-print(f"Wrote files to {temp_dir}")
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
 
-backend = ConvexBackend(temp_dir)
-try:
-    backend.start()
-    backend.deploy()
-finally:
-    backend.stop()
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: Union[str, None] = None):
+    return {"item_id": item_id, "q": q}

@@ -8,10 +8,12 @@ import zipfile
 from typing import Union
 
 import requests
+from convex import ConvexClient
 from portpicker import pick_unused_port
 
 from backends import Backend
 from evaluation.api import ApiDescription, HttpMethod
+from evaluation.task import Task
 
 
 class ConvexBackend(Backend):
@@ -26,7 +28,7 @@ class ConvexBackend(Backend):
             else:
                 raise ValueError(f"Invalid HTTP method: {endpoint.method}")
 
-            path = f"api.{endpoint.name}.default"
+            path = f"api.answer.{endpoint.name}"
             out.append(f"- {function_type} `{path}`: {endpoint.description}")
 
         return "\n".join(out)
@@ -37,6 +39,8 @@ class ConvexBackend(Backend):
         lines.append("Use Convex for building the backend.")
         lines.append("")
         lines.append("".join(render_guidelines(CONVEX_GUIDELINES)))
+        lines.append("")
+        lines.append("".join(render_examples("../evals-convex/examples/")))
         lines.append("## Versions")
         lines.append("- Always use convex version ^1.17.4 in your package.json")
         return "\n".join(lines)
@@ -98,6 +102,7 @@ class ConvexBackend(Backend):
 
         self.port = port
         self.site_proxy_port = site_proxy_port
+        self.client = ConvexClient(f"http://localhost:{port}")
 
     def deploy(self):
         done = subprocess.run(
@@ -128,6 +133,19 @@ class ConvexBackend(Backend):
         )
         if done.returncode != 0:
             raise Exception(f"Failed to deploy:\n{done.stdout}")
+
+    def call_api(self, task: Task, name: str, input):
+        endpoint = next((endpoint for endpoint in task.api_description() if endpoint.name == name), None)
+        if endpoint is None:
+            raise ValueError(f"Endpoint {name} not found in task {task.name}")
+        path = f"answer:{endpoint.name}"
+        if endpoint.method == HttpMethod.GET:
+            result = self.client.query(path, input)
+        elif endpoint.method == HttpMethod.POST:
+            result = self.client.mutation(path, input)
+        else:
+            raise ValueError(f"Invalid HTTP method: {endpoint.method}")
+        return result
 
     def stop(self):
         if not self.process:
@@ -405,7 +423,21 @@ CONVEX_GUIDELINES = GuidelineSection(
             "schema_guidelines",
             [
                 Guideline("Always define your schema in `convex/schema.ts`."),
-                Guideline("Always import the schema definition functions from `convex/server`:"),
+                # TODO: Fold back into original guidelines.
+                Guideline("""Here's an example of a schema definition:
+                    ```ts
+                    // convex/schema.ts
+
+                    import { defineSchema, defineTable } from "convex/server";
+                    import { v } from "convex/values";
+
+                    export default defineSchema({
+                        users: defineTable({
+                            name: v.string(),
+                        }),
+                    });
+                    ```
+                """),
             ],
         ),
         GuidelineSection(
@@ -539,3 +571,36 @@ CONVEX_GUIDELINES = GuidelineSection(
         ),
     ],
 )
+
+
+def render_examples(example_dir: str):
+    yield "# Examples:\n"
+    for example in os.listdir(example_dir):
+        example_path = os.path.join(example_dir, example)
+        if not os.path.isdir(example_path):
+            continue
+
+        task_description = open(os.path.join(example_path, "TASK.txt"), "r").read()
+        analysis = open(os.path.join(example_path, "ANALYSIS.txt"), "r").read()
+
+        file_paths = []
+        for dirpath, _, file_names in os.walk(example_path, topdown=True):
+            if "node_modules" in dirpath or "_generated" in dirpath:
+                continue
+            for file_name in file_names:
+                if file_name == "package.json" or file_name.endswith(".ts"):
+                    file_paths.append(os.path.join(dirpath, file_name))
+
+        file_paths.sort(key=lambda x: (x.count("/"), x))
+
+        yield f"## Example: {example}\n\n"
+        yield "### Task\n"
+        yield f"```\n{task_description}\n```\n\n"
+        yield "### Analysis\n"
+        yield f"{analysis}\n\n"
+        yield "### Implementation\n\n"
+        for file_path in file_paths:
+            rel_path = os.path.relpath(file_path, example_path)
+            file_content = open(file_path, "r").read().strip()
+            yield f"#### {rel_path}\n"
+            yield f"```typescript\n{file_content}\n```\n\n"
